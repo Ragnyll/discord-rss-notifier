@@ -7,16 +7,14 @@ use serenity::model::id::ChannelId;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use std::collections::HashSet;
-use tokio::time::{sleep, Duration };
+use tokio::time::{sleep, Duration};
 
 struct Handler {
-    db_poll_sec: Duration
+    db_poll_sec: Duration,
 }
-
 
 #[async_trait]
 impl EventHandler for Handler {
-
     /// change this for adding the given channel id to the bot
     async fn message(&self, ctx: Context, msg: Message) {
         if msg.content == "!ping" {
@@ -56,7 +54,7 @@ fn get_channel_ids_to_send_to() -> HashSet<u64> {
 #[tokio::main]
 async fn main() {
     let local_build_option = std::env::args().nth(1);
-    if  local_build_option.is_some() && local_build_option.unwrap() == "--local" {
+    if local_build_option.is_some() && local_build_option.unwrap() == "--local" {
         println!("running in local mode, receiving env vars from dotenv");
         dotenv().ok();
     }
@@ -65,7 +63,9 @@ async fn main() {
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
 
     let mut client = Client::builder(&env_conf.discord_token, intents)
-        .event_handler(Handler {db_poll_sec: env_conf.db_poll_sec })
+        .event_handler(Handler {
+            db_poll_sec: env_conf.db_poll_sec,
+        })
         .await
         .expect("Err creating client");
 
