@@ -40,3 +40,11 @@ impl EnvConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_test() {
+        assert!(true)
+    }
+}
