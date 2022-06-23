@@ -13,10 +13,17 @@ struct Handler {
     db_poll_sec: Duration,
 }
 
+impl Handler {
+    /// Polls the rss db updating all
+    fn poll_rss_db(&self) {
+    }
+}
+
 #[async_trait]
 impl EventHandler for Handler {
     /// change this for adding the given channel id to the bot
     async fn message(&self, ctx: Context, msg: Message) {
+
         if msg.content == "!ping" {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Boss Please!").await {
                 println!("Error sending message: {:?}", why);
@@ -31,7 +38,7 @@ impl EventHandler for Handler {
             sleep(self.db_poll_sec).await;
             for c_id in get_channel_ids_to_send_to() {
                 if let Err(why) = ChannelId(c_id)
-                    .say(&ctx.http, "Can somebody gibe da pusi pls?")
+                    .say(&ctx.http, "Every few seconds")
                     .await
                 {
                     eprintln!("error sending update {:?}", why);
