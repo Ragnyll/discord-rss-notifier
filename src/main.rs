@@ -8,14 +8,37 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use std::collections::HashSet;
 use tokio::time::{sleep, Duration};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+enum HandlerError {
+    #[error("unable to subscribe channel to feed")]
+    SubscribeError,
+    #[error("unable to receive updates to feed items")]
+    UpdateReceiveFailure,
+}
 
 struct Handler {
     db_poll_sec: Duration,
 }
 
 impl Handler {
-    /// Polls the rss db updating all
-    fn poll_rss_db(&self) {
+    /// gets all the unread freed items for the specified channel
+    fn get_feed_item_updates_for_channel(&self) -> Result<HashSet<String>, HandlerError> {
+        Ok(HashSet::new())
+    }
+
+    /// subscribes the channel to rss feed_url
+    fn subscribe_channel_to_feed(
+        &self,
+        channel_id: u64,
+        feed_url: &str,
+    ) -> Result<(), HandlerError> {
+        Ok(())
+    }
+
+    fn get_channel_ids_to_send_to(&self) -> HashSet<u64> {
+        HashSet::from_iter(vec![])
     }
 }
 
@@ -23,24 +46,45 @@ impl Handler {
 impl EventHandler for Handler {
     /// change this for adding the given channel id to the bot
     async fn message(&self, ctx: Context, msg: Message) {
+        if msg.content.starts_with("!rss_sub") {
+            let message_split: Vec<&str> = msg.content.split(" ").collect();
+            if message_split.len() != 2 {
+                if let Err(why) = msg
+                    .channel_id
+                    .say(
+                        &ctx.http,
+                        "please subscribe channel to rss feed with the command !rss_sub <feed_url>",
+                    )
+                    .await
+                {
+                    println!("Error subscribing to rss feed: {}", why);
+                }
+            }
 
-        if msg.content == "!ping" {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Boss Please!").await {
-                println!("Error sending message: {:?}", why);
+            let feed_url = message_split[1];
+            if let Ok(_) = self.subscribe_channel_to_feed(*msg.channel_id.as_u64(), feed_url) {
+                if let Err(why) = msg
+                    .channel_id
+                    .say(
+                        &ctx.http,
+                        format!("I've subscribed this channel to {}", feed_url),
+                    )
+                    .await
+                {
+                    println!("Error subscribing to rss feed: {}", why);
+                }
             }
         }
     }
 
-    /// When the bot joins the channel do these things
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{}: bot joined the channel", ready.user.name);
+    /// Starts up when the Handler is ready. This starts the polling loop for rss updates
+    async fn ready(&self, ctx: Context, _: Ready) {
         loop {
             sleep(self.db_poll_sec).await;
-            for c_id in get_channel_ids_to_send_to() {
-                if let Err(why) = ChannelId(c_id)
-                    .say(&ctx.http, "Every few seconds")
-                    .await
-                {
+            for c_id in self.get_channel_ids_to_send_to() {
+                // check db for rss feed updates
+                // push update to the channel
+                if let Err(why) = ChannelId(c_id).say(&ctx.http, "Every few seconds").await {
                     eprintln!("error sending update {:?}", why);
                 }
             }
@@ -52,10 +96,6 @@ impl EventHandler for Handler {
         // on every wakeup check a db for all channel_ids
         // for every channel ids retrieve their new rss feeds, and publish them to the channel
     }
-}
-
-fn get_channel_ids_to_send_to() -> HashSet<u64> {
-    HashSet::from_iter(vec![988182924581036032])
 }
 
 #[tokio::main]
