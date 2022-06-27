@@ -5,6 +5,7 @@ use tokio::time::Duration;
 /// A token for interacting with the discord bot api
 const DISCORD_TOKEN: &str = "DISCORD_TOKEN";
 const DB_POLL_SEC: &str = "DB_POLL_SEC";
+const DATABASE_URL: &str = "DATABASE_URL";
 
 // Defaults
 
@@ -15,6 +16,7 @@ const DEFAULT_SLEEP_TIME: Duration = Duration::from_secs(900);
 pub struct EnvConfig {
     pub discord_token: String,
     pub db_poll_sec: Duration,
+    pub database_url: String
 }
 
 impl Default for EnvConfig {
@@ -37,6 +39,7 @@ impl EnvConfig {
                     DEFAULT_SLEEP_TIME
                 }
             },
+            database_url: env::var(DATABASE_URL).expect("{DATABASE_URL} env var required"),
         }
     }
 }

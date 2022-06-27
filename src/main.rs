@@ -12,14 +12,18 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 enum HandlerError {
+    #[allow(dead_code)]
     #[error("unable to subscribe channel to feed")]
     SubscribeError,
+    #[allow(dead_code)]
     #[error("unable to receive updates to feed items")]
     UpdateReceiveFailure,
 }
 
 struct Handler {
     db_poll_sec: Duration,
+    #[allow(dead_code)]
+    db_url: String,
 }
 
 impl Handler {
@@ -39,6 +43,14 @@ impl Handler {
 
     fn get_channel_ids_to_send_to(&self) -> HashSet<u64> {
         HashSet::from_iter(vec![])
+    }
+
+    fn get_subscriptions_for_channel(&self, channel_id: u64) -> HashSet<String> {
+        todo!("I cant get the subscrciptions for this {channel_id} yet");
+    }
+
+    fn format_subscriptions(&self, subscriptions: HashSet<String>) -> String {
+        todo!("I cant format subscriptions yet");
     }
 }
 
@@ -73,6 +85,19 @@ impl EventHandler for Handler {
                 {
                     println!("Error subscribing to rss feed: {}", why);
                 }
+            }
+        } else if msg.content.starts_with("!rss_list") {
+            let subscriptions = self.get_subscriptions_for_channel(*msg.channel_id.as_u64());
+            let formatted_subscriptions = self.format_subscriptions(subscriptions);
+            if let Err(why) = msg
+                .channel_id
+                .say(
+                    &ctx.http,
+                    formatted_subscriptions,
+                )
+                .await
+            {
+                println!("Error listing rss feeds to channel: {}", why);
             }
         }
     }
@@ -112,6 +137,7 @@ async fn main() {
     let mut client = Client::builder(&env_conf.discord_token, intents)
         .event_handler(Handler {
             db_poll_sec: env_conf.db_poll_sec,
+            db_url: env_conf.database_url,
         })
         .await
         .expect("Err creating client");
