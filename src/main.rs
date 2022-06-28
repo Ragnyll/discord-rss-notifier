@@ -1,4 +1,5 @@
 use discord_rss_notifier::config::EnvConfig;
+use discord_rss_notifier::message_handler::MsgCommand;
 
 use dotenv::dotenv;
 use serenity::async_trait;
@@ -58,46 +59,41 @@ impl Handler {
 impl EventHandler for Handler {
     /// change this for adding the given channel id to the bot
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content.starts_with("!rss_sub") {
-            let message_split: Vec<&str> = msg.content.split(" ").collect();
-            if message_split.len() != 2 {
-                if let Err(why) = msg
-                    .channel_id
-                    .say(
-                        &ctx.http,
-                        "please subscribe channel to rss feed with the command !rss_sub <feed_url>",
-                    )
-                    .await
-                {
-                    println!("Error subscribing to rss feed: {}", why);
+        let msg_cmd = MsgCommand::new(&msg);
+        match msg_cmd {
+            // The command is valid process it
+            Ok(cmd) => match cmd {
+                Some(MsgCommand::ListRssSubscriptions) => {
+                    let subscriptions =
+                        self.get_subscriptions_for_channel(*msg.channel_id.as_u64());
+                    let formatted_subscriptions = self.format_subscriptions(subscriptions);
+                    if let Err(why) = msg.channel_id.say(&ctx.http, formatted_subscriptions).await {
+                        println!("Error listing rss feeds to channel: {}", why);
+                    }
                 }
-            }
-
-            let feed_url = message_split[1];
-            if let Ok(_) = self.subscribe_channel_to_feed(*msg.channel_id.as_u64(), feed_url) {
-                if let Err(why) = msg
-                    .channel_id
-                    .say(
-                        &ctx.http,
-                        format!("I've subscribed this channel to {}", feed_url),
-                    )
-                    .await
-                {
-                    println!("Error subscribing to rss feed: {}", why);
+                Some(MsgCommand::SubscribeToRssFeed { feed_url }) => {
+                    if let Ok(_) =
+                        self.subscribe_channel_to_feed(*msg.channel_id.as_u64(), &feed_url)
+                    {
+                        if let Err(why) = msg
+                            .channel_id
+                            .say(
+                                &ctx.http,
+                                format!("I've subscribed this channel to {}", feed_url),
+                            )
+                            .await
+                        {
+                            println!("Error subscribing to rss feed: {}", why);
+                        }
+                    }
                 }
-            }
-        } else if msg.content.starts_with("!rss_list") {
-            let subscriptions = self.get_subscriptions_for_channel(*msg.channel_id.as_u64());
-            let formatted_subscriptions = self.format_subscriptions(subscriptions);
-            if let Err(why) = msg
-                .channel_id
-                .say(
-                    &ctx.http,
-                    formatted_subscriptions,
-                )
-                .await
-            {
-                println!("Error listing rss feeds to channel: {}", why);
+                None => (),
+            },
+            // The command is invalid. The bot should respond then move on
+            Err(context) => {
+                if let Err(why) = msg.channel_id.say(&ctx.http, context).await {
+                    log::error!("Error handling client command: {why}");
+                }
             }
         }
     }
@@ -125,9 +121,11 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    simple_logger::init_with_env().unwrap();
+
     let local_build_option = std::env::args().nth(1);
     if local_build_option.is_some() && local_build_option.unwrap() == "--local" {
-        println!("running in local mode, receiving env vars from dotenv");
+        log::info!("running in local mode, receiving env vars from dotenv");
         dotenv().ok();
     }
 
@@ -143,6 +141,6 @@ async fn main() {
         .expect("Err creating client");
 
     if let Err(why) = client.start_autosharded().await {
-        println!("Client error: {:?}", why);
+        log::error!("Client error: {:?}", why);
     }
 }
