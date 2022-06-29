@@ -1,3 +1,4 @@
+use crate::message_handler::message_commands::ProcessMessage;
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::id::ChannelId;
@@ -48,43 +49,28 @@ impl Handler {
 impl EventHandler for Handler {
     /// change this for adding the given channel id to the bot
     async fn message(&self, ctx: Context, msg: Message) {
-        let msg_cmd = message_commands::MsgCommand::new(&msg);
+        let msg_cmd = message_commands::new_message_command(&msg);
         match msg_cmd {
-            // The command is valid process it
-            Ok(cmd) => match cmd {
-                Some(message_commands::MsgCommand::ListRssSubscriptions) => {
-                    let subscriptions =
-                        self.get_subscriptions_for_channel(*msg.channel_id.as_u64());
-                    let formatted_subscriptions = self.format_subscriptions(subscriptions);
-                    if let Err(why) = msg.channel_id.say(&ctx.http, formatted_subscriptions).await {
-                        println!("Error listing rss feeds to channel: {}", why);
-                    }
+            Ok(c) => {
+                match c {
+                    Some(c) => {
+                        // TODO: no unwrap
+                        // let c = &c as &dyn ProcessMessage;
+                        let _ = c.process();
+                    },
+                    None => (),
                 }
-                Some(message_commands::MsgCommand::SubscribeToRssFeed { feed_url }) => {
-                    if let Ok(_) =
-                        self.subscribe_channel_to_feed(*msg.channel_id.as_u64(), &feed_url)
-                    {
-                        if let Err(why) = msg
-                            .channel_id
-                            .say(
-                                &ctx.http,
-                                format!("I've subscribed this channel to {}", feed_url),
-                            )
-                            .await
-                        {
-                            println!("Error subscribing to rss feed: {}", why);
-                        }
-                    }
-                }
-                None => (),
-            },
-            // The command is invalid. The bot should respond then move on
-            Err(context) => {
-                if let Err(why) = msg.channel_id.say(&ctx.http, context).await {
-                    log::error!("Error handling client command: {why}");
-                }
+
             }
-        }
+            Err(e) => {
+
+        // if let Err(why) = msg.channel_id.say(&ctx.http, context).await {
+            // log::error!("Error handling client command: {why}");
+        // }
+                // msg.channel_id.say(&ctx.http, e).await;
+                log::error!("Error processing message_type: {:?}", e);
+            },
+        };
     }
 
     /// Starts up when the Handler is ready. This starts the polling loop for rss updates
