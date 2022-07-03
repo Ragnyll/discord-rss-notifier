@@ -6,8 +6,6 @@ use serenity::prelude::*;
 
 #[tokio::main]
 async fn main() {
-    simple_logger::init_with_env().unwrap();
-
     let local_build_option = std::env::args().nth(1);
     if local_build_option.is_some() && local_build_option.unwrap() == "--local" {
         log::info!("running in local mode, receiving env vars from dotenv");

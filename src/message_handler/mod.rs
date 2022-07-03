@@ -22,25 +22,8 @@ impl Handler {
         Ok(HashSet::new())
     }
 
-    /// subscribes the channel to rss feed_url
-    fn subscribe_channel_to_feed(
-        &self,
-        channel_id: u64,
-        feed_url: &str,
-    ) -> Result<(), HandlerError> {
-        Ok(())
-    }
-
     fn get_channel_ids_to_send_to(&self) -> HashSet<u64> {
         HashSet::from_iter(vec![])
-    }
-
-    fn get_subscriptions_for_channel(&self, channel_id: u64) -> HashSet<String> {
-        todo!("I cant get the subscrciptions for this {channel_id} yet");
-    }
-
-    fn format_subscriptions(&self, subscriptions: HashSet<String>) -> String {
-        todo!("I cant format subscriptions yet");
     }
 }
 
@@ -53,28 +36,10 @@ impl EventHandler for Handler {
             // The command is valid process it
             Ok(cmd) => match cmd {
                 Some(message_commands::MsgCommand::ListRssSubscriptions) => {
-                    let subscriptions =
-                        self.get_subscriptions_for_channel(*msg.channel_id.as_u64());
-                    let formatted_subscriptions = self.format_subscriptions(subscriptions);
-                    if let Err(why) = msg.channel_id.say(&ctx.http, formatted_subscriptions).await {
-                        println!("Error listing rss feeds to channel: {}", why);
-                    }
+                    message_commands::list_channel_subscriptions(msg, ctx).await;
                 }
                 Some(message_commands::MsgCommand::SubscribeToRssFeed { feed_url }) => {
-                    if let Ok(_) =
-                        self.subscribe_channel_to_feed(*msg.channel_id.as_u64(), &feed_url)
-                    {
-                        if let Err(why) = msg
-                            .channel_id
-                            .say(
-                                &ctx.http,
-                                format!("I've subscribed this channel to {}", feed_url),
-                            )
-                            .await
-                        {
-                            println!("Error subscribing to rss feed: {}", why);
-                        }
-                    }
+                    message_commands::subscribe_channel_to_feed(&feed_url, msg, ctx).await;
                 }
                 None => (),
             },
