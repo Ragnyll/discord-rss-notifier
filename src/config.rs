@@ -16,7 +16,7 @@ const DEFAULT_SLEEP_TIME: Duration = Duration::from_secs(900);
 pub struct EnvConfig {
     pub discord_token: String,
     pub db_poll_sec: Duration,
-    pub database_url: String
+    pub database_url: String,
 }
 
 impl Default for EnvConfig {

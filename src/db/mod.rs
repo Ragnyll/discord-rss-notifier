@@ -31,7 +31,6 @@ impl QueryManager {
     /// Gets all the updated feed_item urls for given channel_id
     pub fn get_all_feed_updates(channel_id: u64) -> HashSet<String> {
         todo!("I cant get feed updates for {channel_id} yet");
-
     }
 }
 

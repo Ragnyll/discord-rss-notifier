@@ -64,12 +64,6 @@ impl EventHandler for Handler {
                 }
             }
         }
-
-        // This works ^^^ but do the following
-        // create a db for all rss items. set a ttl on them for 1 week (easily done with cosmos db)
-        // Async sleep
-        // on every wakeup check a db for all channel_ids
-        // for every channel ids retrieve their new rss feeds, and publish them to the channel
     }
 }
 

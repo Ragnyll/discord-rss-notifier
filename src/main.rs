@@ -1,14 +1,17 @@
 use discord_rss_notifier::config::EnvConfig;
 use discord_rss_notifier::message_handler::Handler;
-
 use dotenv::dotenv;
+use reqwest;
 use serenity::prelude::*;
+use std::fs::File;
+use std::io::BufReader;
+use std::str::FromStr;
 
 #[tokio::main]
 async fn main() {
     let local_build_option = std::env::args().nth(1);
     if local_build_option.is_some() && local_build_option.unwrap() == "--local" {
-        log::info!("running in local mode, receiving env vars from dotenv");
+        println!("running in local mode, receiving env vars from dotenv");
         dotenv().ok();
     }
 
@@ -24,6 +27,6 @@ async fn main() {
         .expect("Err creating client");
 
     if let Err(why) = client.start_autosharded().await {
-        log::error!("Client error: {:?}", why);
+        eprintln!("Client error: {:?}", why);
     }
 }
