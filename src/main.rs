@@ -1,11 +1,7 @@
 use discord_rss_notifier::config::EnvConfig;
 use discord_rss_notifier::message_handler::Handler;
 use dotenv::dotenv;
-use reqwest;
-use serenity::prelude::*;
-use std::fs::File;
-use std::io::BufReader;
-use std::str::FromStr;
+use serenity::prelude::{Client, GatewayIntents};
 
 #[tokio::main]
 async fn main() {
