@@ -1,3 +1,4 @@
+use crate::models::FeedSubscription;
 use diesel::prelude::*;
 use std::collections::HashSet;
 use thiserror::Error;
@@ -34,7 +35,7 @@ impl QueryManager {
         todo!("I cant get feed updates for {channel_id} yet");
     }
 
-    pub fn get_all_subscriptions(&self) -> Result<HashSet<String>, QueryError> {
+    pub fn get_all_subscriptions(&self) -> Result<HashSet<FeedSubscription>, QueryError> {
         todo!("I cant get all subscriptions yet");
     }
 }

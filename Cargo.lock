@@ -291,6 +291,7 @@ name = "discord-rss-notifier"
 version = "0.1.0"
 dependencies = [
  "atom_syndication",
+ "bytes",
  "diesel",
  "dirs",
  "dotenv",

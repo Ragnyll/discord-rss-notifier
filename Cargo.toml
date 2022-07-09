@@ -6,12 +6,13 @@ rust-version = "1.61.0"
 
 [dependencies]
 atom_syndication = { version = "0.11", default-features = false }
+bytes = "1.1.0"
 diesel = { version = "1.4.8", features = ["sqlite"] }
 dirs = "4.0.0"
 dotenv = "0.15.0"
 log = "0.4.17"
 serenity = { version = "0.11", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
-reqwest = "0.11.11"
+reqwest = { version = "0.11.11", features = ["blocking"] }
 rss = { version = "2.0.1", default-features = false, features = [
     "atom", "atom_syndication"
 ] }

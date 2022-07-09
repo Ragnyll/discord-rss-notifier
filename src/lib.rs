@@ -5,3 +5,4 @@ pub mod config;
 pub mod db;
 pub mod feeds;
 pub mod message_handler;
+pub mod models;
