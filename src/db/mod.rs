@@ -1,4 +1,4 @@
-use crate::models::FeedSubscription;
+use crate::models::{FeedItem, FeedSubscription};
 use diesel::prelude::*;
 use std::collections::HashSet;
 use thiserror::Error;
@@ -37,6 +37,13 @@ impl QueryManager {
 
     pub fn get_all_subscriptions(&self) -> Result<HashSet<FeedSubscription>, QueryError> {
         todo!("I cant get all subscriptions yet");
+    }
+
+    pub fn update_feed_items(
+        &self,
+        feed_items: HashSet<FeedItem>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        todo!("I cant update_feed_items");
     }
 }
 

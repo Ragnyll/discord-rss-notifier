@@ -3,8 +3,9 @@
 /// Not all feeds are RSS. What people call RSS actually usually includes atom feeds, which are far
 /// more common these these days. Both are valid and need to be handled.
 use bytes::Bytes;
-use crate::db::{QueryManager, QueryError};
+use crate::db::QueryManager;
 use crate::models::{FeedItem, FeedSubscription, FeedType};
+use std::collections::HashSet;
 use std::error::Error;
 use std::sync::Mutex;
 
@@ -29,46 +30,80 @@ fn update_feed_items_for_subscription(
     query_manager: &QueryManager,
 ) -> Result<(), Box<dyn Error>> {
     let feed = reqwest::blocking::get(&subscription.feed_url)?.bytes();
-    match feed {
+    let feed_items = match feed {
         Ok(f) => match subscription.feed_type {
-            // FeedType::Rss => update_rss_feed_items(f, query_manager)?,
-            FeedType::Atom => update_atom_feed_items(f, query_manager)?,
-            _ => todo!("this shouldnt be here")
+            // TODO: update get the right feed_id
+            FeedType::Rss => get_rss_feed_items(subscription.id, f)?,
+            FeedType::Atom => get_atom_feed_items(&subscription.base_url, subscription.id, f)?,
         },
-        Err(e) => eprintln!(
-            "I was unable to retrieve feed updates for {:?}: {:?}",
-            subscription.feed_url, e
-        ),
-    }
+        Err(e) => {
+            eprintln!(
+                "I was unable to retrieve feed updates for {:?}: {:?}",
+                subscription.feed_url, e
+            );
+
+            HashSet::new()
+        }
+    };
+    println!("feed_items: {feed_items:?}");
+    query_manager.update_feed_items(feed_items)?;
 
     Ok(())
 }
 
-fn update_atom_feed_items(
-    feed: Bytes,
-    query_manager: &QueryManager,
-) -> Result<(), Box<dyn Error>> {
-    let feed= atom::Feed::read_from(&feed[..]);
+fn get_atom_feed_items(feed_base_url: &str, feed_id: u64, feed: Bytes) -> Result<HashSet<FeedItem>, Box<dyn Error>> {
+    let feed = atom::Feed::read_from(&feed[..])?;
+    let mut feed_items = HashSet::new();
 
-    for item in feed {
-        println!("Feed Item title: {:?}", item.title());
+    for item in feed.entries() {
+        let feed_item = FeedItem {
+            feed_id,
+            link: format!("{feed_base_url}{}", item.id().to_string()),
+        };
+
+        feed_items.insert(feed_item);
     }
-    Ok(())
+
+    Ok(feed_items)
 }
 
-// fn update_rss_feed_items(
-    // feed: Bytes,
-    // query_manager: &QueryManager,
-// ) -> Result<(), Box<dyn Error>> {
-    // let feed =
-    // Ok(())
-// }
+fn get_rss_feed_items(feed_id: u64, feed: Bytes) -> Result<HashSet<FeedItem>, Box<dyn Error>> {
+    let feed = rss::Channel::read_from(&feed[..])?;
+    let mut feed_items = HashSet::new();
+
+    for item in feed.items() {
+        let feed_item = FeedItem {
+            feed_id,
+            link: item.link().ok_or(FeedError::FeedItemReadError)?.to_string(),
+        };
+
+        feed_items.insert(feed_item);
+    }
+
+    println!("feed_items: {feed_items:?}");
+    Ok(feed_items)
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum FeedError {
+    #[allow(dead_code)]
+    #[error("Unable to read al lfields from the feed_item")]
+    FeedItemReadError,
+}
 
 
 #[cfg(test)]
 mod test {
     #[test]
-    fn test_can_get_feed_title() {
-        use super::update_feed_items_for_subscription;
+    fn test_atom_can_get_feed_title() {
+        use super::get_atom_feed_items;
+        let feed = reqwest::blocking::get("https://ragnyll.github.io/feed.xml")
+            .unwrap()
+            .bytes()
+            .unwrap();
+
+        let feed_items = get_atom_feed_items("https://ragnyll.github.io", 64, feed);
+        println!("feed_items {feed_items:?}");
+        assert_eq!(true, false);
     }
 }
